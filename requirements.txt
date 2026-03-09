@@ -1,0 +1,3 @@
+pandas>=2.0.0
+scikit-learn>=1.3.0
+praat-parselmouth>=0.4.3

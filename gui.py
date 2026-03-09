@@ -1,78 +1,96 @@
-from tkinter import*
-from tkinter import filedialog
-import tkinter.messagebox
+"""
+gui.py - Tkinter GUI for Parkinson's disease detection from voice recordings.
+
+Requires: parselmouth (pip install praat-parselmouth)
+"""
+
+import os
 import pickle
 import re
-import pandas as pd
-import parselmouth
-import csv
-from sklearn.preprocessing import StandardScaler
+import numpy as np
+from tkinter import Tk, Button, Menu, filedialog, messagebox
+
+FEATURE_COLS = [5, 23, 22, 13, 1, 7, 2, 4, 8, 3]
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+def extract_and_predict(wav_path):
+    """Extract features from wav_path and return prediction (0=healthy, 1=parkinsons)."""
+    import parselmouth
 
-window =Tk()
-window.geometry('300x300')
-window.title("Parkinson's Detection")
-
-def detect():
-    sound = parselmouth.Sound(filename)
+    sound = parselmouth.Sound(wav_path)
     pitch = sound.to_pitch()
     pulses = parselmouth.praat.call([sound, pitch], "To PointProcess (cc)")
-    voice_report_str = parselmouth.praat.call([sound, pitch, pulses], "Voice report", 0.0, 0.0, 75, 600, 1.3, 1.6, 0.03, 0.45)
- 
-    s=re.findall(r'-?\d+\.?\d*',voice_report_str)
-    df = pd.DataFrame(s)
-    df.to_csv("file_path.csv")
-    row = ['1',s[21], s[22]+'E'+s[23],s[24],s[26],s[27],s[28],s[29],s[31],s[33],s[35],s[36],s[37],s[38],s[39],s[3],s[4],s[5],s[6],s[7],s[8],s[9],s[10]+'E'+s[11],s[12]+'E'+s[13]]
+    voice_report = parselmouth.praat.call(
+        [sound, pitch, pulses], "Voice report", 0.0, 0.0, 75, 600, 1.3, 1.6, 0.03, 0.45
+    )
 
-    with open('test.csv', 'r') as readFile:
-        reader = csv.reader(readFile)
-        lines = list(reader)
-        lines[1] = row
+    n = re.findall(r'-?\d+\.?\d*', voice_report)
+    all_features = [
+        float(n[21]), float(n[22] + 'E' + n[23]), float(n[24]), float(n[26]),
+        float(n[27]), float(n[28]), float(n[29]), float(n[31]),
+        float(n[33]), float(n[35]), float(n[36]), float(n[37]),
+        float(n[38]), float(n[39]), float(n[3]), float(n[4]),
+        float(n[5]), float(n[6]), float(n[7]), float(n[8]),
+        float(n[9]), float(n[10] + 'E' + n[11]), float(n[12] + 'E' + n[13]),
+    ]
+    X = np.array([all_features[c - 1] for c in FEATURE_COLS]).reshape(1, -1)
 
-    with open('test.csv', 'w') as writeFile:
-        writer = csv.writer(writeFile)
-        writer.writerows(lines)
+    with open(os.path.join(BASE_DIR, 'svmclassifier.pkl'), 'rb') as f:
+        saved = pickle.load(f)
 
-        readFile.close()
-        writeFile.close()
-        
-        
-    svm_pkl_filename = 'svmclassifier.pkl'
-    decision_tree_model_pkl = open(svm_pkl_filename, 'rb')
-    svm_model = pickle.load(decision_tree_model_pkl)
-    
-   
-    #sc = StandardScaler()
-    data = pd.read_csv('test.csv')
-    X_test1=data.iloc[:,[5,23,22,13,1,7,2,4,12,3]].values
-   # X_test1 = sc.fit_transform(X_test1)
-    y_pred = svm_model.predict(X_test1)
-    print(y_pred)
-    if y_pred == 1:
-        tkinter.messagebox.showinfo("Result","You have been Diagnosed with Parkinson's Disease")
-    else:
-        tkinter.messagebox.showinfo("Result","You are a Healthy Person")    
-def browse_file():
-    global filename
-    filename= filedialog.askopenfilename()
-def help_me():
-    tkinter.messagebox.showinfo("Help","How can i help you")
+    X_scaled = saved['scaler'].transform(X)
+    return saved['model'].predict(X_scaled)[0]
 
 
-menubar=Menu(window)
-submenu=Menu(menubar,tearoff=0)
-window.config(menu=menubar)
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Parkinson's Detection")
+        self.root.geometry('300x300')
+        self.filename = None
 
-menubar.add_cascade(label="File",menu=submenu)
-submenu.add_command(label="Open",command=browse_file)
-submenu.add_command(label="Exit",command=window.destroy)
-submenu=Menu(menubar,tearoff=0)
-menubar.add_cascade(label="About Us",menu=submenu)
-submenu.add_command(label="Help",command=help_me)
+        menubar = Menu(root)
+        file_menu = Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Open", command=self.browse_file)
+        file_menu.add_command(label="Exit", command=root.destroy)
+        menubar.add_cascade(label="File", menu=file_menu)
 
-detectbutton=Button(window,text="Detect",command=detect)
-detectbutton.pack()
+        help_menu = Menu(menubar, tearoff=0)
+        help_menu.add_command(
+            label="Help",
+            command=lambda: messagebox.showinfo(
+                "Help", "1. File → Open to select a .wav voice recording\n"
+                        "2. Click Detect to analyze"
+            )
+        )
+        menubar.add_cascade(label="About", menu=help_menu)
+        root.config(menu=menubar)
+
+        Button(root, text="Detect", command=self.detect).pack(pady=20)
+
+    def browse_file(self):
+        self.filename = filedialog.askopenfilename(
+            filetypes=[("WAV files", "*.wav"), ("All files", "*.*")]
+        )
+
+    def detect(self):
+        if not self.filename:
+            messagebox.showwarning("No File", "Please open a .wav file first (File → Open)")
+            return
+        try:
+            result = extract_and_predict(self.filename)
+            if result == 1:
+                messagebox.showinfo("Result", "Parkinson's Disease Detected")
+            else:
+                messagebox.showinfo("Result", "Healthy — No Parkinson's Detected")
+        except ImportError:
+            messagebox.showerror("Error", "parselmouth not installed.\nRun: pip install praat-parselmouth")
+        except Exception as e:
+            messagebox.showerror("Error", f"Analysis failed:\n{e}")
 
 
-window.mainloop()
+if __name__ == '__main__':
+    root = Tk()
+    App(root)
+    root.mainloop()
