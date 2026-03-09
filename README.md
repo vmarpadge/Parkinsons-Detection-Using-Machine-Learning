@@ -94,10 +94,16 @@ If you use this dataset, please cite:
 
 The model achieves ~65% accuracy on `final2.csv`. The original project was built for a different dataset (`final1.csv`, 25 columns) which is no longer available and likely achieved higher accuracy. The 10 features were selected via Particle Swarm Optimization (PSO) for that original dataset.
 
+## Limitations
+
+- **No automated tests.** Contributions adding unit tests for `extract_features()`, `train()`, and `predict()` are welcome.
+- **Model accuracy is ~65%** on the available dataset. See [Model Accuracy](#model-accuracy) for context.
+- **Pickle security:** The model is saved/loaded via `pickle`, which can execute arbitrary code. Only load `.pkl` files you generated yourself with `train.py`. Never load untrusted pickle files.
+
 ## License
 
 This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Contributions are welcome. Please open an issue or submit a pull request.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

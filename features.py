@@ -21,7 +21,7 @@ FEATURE_COLS = [5, 23, 22, 13, 1, 7, 2, 4, 8, 3]
 _MIN_REPORT_NUMBERS = 40
 
 
-def extract_features(wav_path):
+def extract_features(wav_path: str) -> np.ndarray:
     """
     Extract acoustic features from a .wav file using PRAAT.
 

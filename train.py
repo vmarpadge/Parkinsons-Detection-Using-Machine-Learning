@@ -18,7 +18,7 @@ from features import FEATURE_COLS
 LABEL_COL = 28  # Binary label: 1 = Parkinson's, 0 = Healthy
 
 
-def train():
+def train() -> None:
     """Train the SVM model and save it with the scaler."""
     dataset = pd.read_csv('final2.csv', header=None)
 

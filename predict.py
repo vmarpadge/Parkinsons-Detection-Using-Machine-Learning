@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, 'svmclassifier.pkl')
 
 
-def predict(wav_path):
+def predict(wav_path: str) -> str:
     """Run prediction on a .wav file and return the result string."""
     if not os.path.isfile(MODEL_PATH):
         raise FileNotFoundError(

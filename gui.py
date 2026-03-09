@@ -19,7 +19,7 @@ DISCLAIMER = (
 )
 
 
-def run_prediction(wav_path):
+def run_prediction(wav_path: str) -> int:
     """Extract features and return prediction (0=healthy, 1=parkinsons)."""
     X = extract_features(wav_path)
 

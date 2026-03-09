@@ -1,0 +1,17 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m py_compile features.py
+      - run: python -m py_compile train.py
+      - run: python -m py_compile predict.py
+      - run: python -m py_compile gui.py
+      - run: python -m pytest tests/ -v
+        if: hashFiles('tests/') != ''
