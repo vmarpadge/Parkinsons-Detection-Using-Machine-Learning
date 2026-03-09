@@ -9,7 +9,9 @@ import os
 import re
 import numpy as np
 
-# 10 PSO-selected feature column indices (0-based CSV columns, excluding Subject ID):
+# 10 PSO-selected feature columns (0-based CSV column indices, used by both
+# train.py via pandas iloc and features.py for extraction).
+# Column 0 = Subject ID, columns 1-27 = acoustic features, column 28 = label.
 # 5=Jitter(ddp), 23=SD of period, 22=Mean period, 13=NTH,
 # 1=Jitter(local), 7=Shimmer(local,dB), 2=Jitter(local,abs),
 # 4=Jitter(ppq5), 8=Shimmer(apq3), 3=Jitter(rap)
@@ -100,7 +102,8 @@ def extract_features(wav_path):
         float(nums[12] + 'E' + nums[13]),             # 23: SD of period seconds
     ]
 
-    # Select the 10 training features
-    # FEATURE_COLS are 1-based CSV column indices; all_features is 0-based
+    # Select the 10 training features.
+    # all_features[0] corresponds to CSV column 1 (column 0 is Subject ID),
+    # so subtract 1 to convert CSV column index → all_features index.
     selected = [all_features[c - 1] for c in FEATURE_COLS]
     return np.array(selected).reshape(1, -1)

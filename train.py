@@ -15,7 +15,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 from features import FEATURE_COLS
 
-LABEL_COL = 28
+LABEL_COL = 28  # Binary label: 1 = Parkinson's, 0 = Healthy
 
 
 def train():
@@ -33,6 +33,7 @@ def train():
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
+    # RBF kernel with C=10 (tuned for this dataset; higher C = less regularization)
     classifier = SVC(kernel='rbf', C=10, random_state=0)
     classifier.fit(X_train, y_train)
 

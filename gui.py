@@ -37,6 +37,7 @@ def run_prediction(wav_path):
 
 
 class App:
+    """Tkinter GUI — file picker + SVM prediction with medical disclaimer."""
     def __init__(self, root):
         self.root = root
         self.root.title("Parkinson's Detection")

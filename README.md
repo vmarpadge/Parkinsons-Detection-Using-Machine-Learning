@@ -26,7 +26,7 @@ Detects Parkinson's disease from voice recordings using an SVM (Support Vector M
 ## Setup
 
 ```bash
-# Python 3.8+ required
+# Python 3.10+ required
 pip install -r requirements.txt
 ```
 
@@ -76,7 +76,8 @@ Use **File → Open** to select a `.wav` file containing a sustained vowel ('a' 
 
 ## Dataset
 
-- **Source**: UCI Machine Learning Repository — Parkinson Speech Dataset with Multiple Types of Sound Recordings
+- **Source**: [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/301/) — Parkinson Speech Dataset with Multiple Types of Sound Recordings
+- **License**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - **Samples**: 1040 recordings from 56 subjects (sustained vowels 'a' and 'o', 3 times each)
 - **Features**: 24 acoustic features including jitter variants, shimmer variants, autocorrelation, noise-to-harmonics ratio, pitch statistics, pulse/period measurements
 - **Label**: Binary (1 = Parkinson's, 0 = Healthy) at column index 28
