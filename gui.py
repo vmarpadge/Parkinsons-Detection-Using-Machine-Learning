@@ -6,37 +6,30 @@ Requires: parselmouth (pip install praat-parselmouth)
 
 import os
 import pickle
-import re
-import numpy as np
-from tkinter import Tk, Button, Menu, filedialog, messagebox
+from tkinter import Tk, Button, Label, Menu, filedialog, messagebox
 
-FEATURE_COLS = [5, 23, 22, 13, 1, 7, 2, 4, 8, 3]
+from features import extract_features
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+DISCLAIMER = (
+    "⚠ DISCLAIMER: This tool is for educational and research purposes only.\n"
+    "It is NOT a medical diagnostic tool. Do not use it to make health\n"
+    "decisions. Always consult a qualified healthcare professional."
+)
 
-def extract_and_predict(wav_path):
-    """Extract features from wav_path and return prediction (0=healthy, 1=parkinsons)."""
-    import parselmouth
 
-    sound = parselmouth.Sound(wav_path)
-    pitch = sound.to_pitch()
-    pulses = parselmouth.praat.call([sound, pitch], "To PointProcess (cc)")
-    voice_report = parselmouth.praat.call(
-        [sound, pitch, pulses], "Voice report", 0.0, 0.0, 75, 600, 1.3, 1.6, 0.03, 0.45
-    )
+def run_prediction(wav_path):
+    """Extract features and return prediction (0=healthy, 1=parkinsons)."""
+    X = extract_features(wav_path)
 
-    n = re.findall(r'-?\d+\.?\d*', voice_report)
-    all_features = [
-        float(n[21]), float(n[22] + 'E' + n[23]), float(n[24]), float(n[26]),
-        float(n[27]), float(n[28]), float(n[29]), float(n[31]),
-        float(n[33]), float(n[35]), float(n[36]), float(n[37]),
-        float(n[38]), float(n[39]), float(n[3]), float(n[4]),
-        float(n[5]), float(n[6]), float(n[7]), float(n[8]),
-        float(n[9]), float(n[10] + 'E' + n[11]), float(n[12] + 'E' + n[13]),
-    ]
-    X = np.array([all_features[c - 1] for c in FEATURE_COLS]).reshape(1, -1)
+    model_path = os.path.join(BASE_DIR, 'svmclassifier.pkl')
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(
+            "Model not found. Run 'python train.py' first."
+        )
 
-    with open(os.path.join(BASE_DIR, 'svmclassifier.pkl'), 'rb') as f:
+    with open(model_path, 'rb') as f:
         saved = pickle.load(f)
 
     X_scaled = saved['scaler'].transform(X)
@@ -47,9 +40,10 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Parkinson's Detection")
-        self.root.geometry('300x300')
+        self.root.geometry('400x200')
         self.filename = None
 
+        # Menu
         menubar = Menu(root)
         file_menu = Menu(menubar, tearoff=0)
         file_menu.add_command(label="Open", command=self.browse_file)
@@ -60,14 +54,19 @@ class App:
         help_menu.add_command(
             label="Help",
             command=lambda: messagebox.showinfo(
-                "Help", "1. File → Open to select a .wav voice recording\n"
-                        "2. Click Detect to analyze"
-            )
+                "Help",
+                "1. File → Open to select a .wav voice recording\n"
+                "2. Click Detect to analyze\n\n" + DISCLAIMER,
+            ),
         )
         menubar.add_cascade(label="About", menu=help_menu)
         root.config(menu=menubar)
 
-        Button(root, text="Detect", command=self.detect).pack(pady=20)
+        # Disclaimer label
+        Label(root, text=DISCLAIMER, fg="red", justify="left",
+              wraplength=380, font=("TkDefaultFont", 9)).pack(pady=(10, 5))
+
+        Button(root, text="Detect", command=self.detect).pack(pady=10)
 
     def browse_file(self):
         self.filename = filedialog.askopenfilename(
@@ -79,13 +78,15 @@ class App:
             messagebox.showwarning("No File", "Please open a .wav file first (File → Open)")
             return
         try:
-            result = extract_and_predict(self.filename)
+            result = run_prediction(self.filename)
             if result == 1:
-                messagebox.showinfo("Result", "Parkinson's Disease Detected")
+                messagebox.showinfo("Result", "Parkinson's Disease Detected\n\n" + DISCLAIMER)
             else:
-                messagebox.showinfo("Result", "Healthy — No Parkinson's Detected")
-        except ImportError:
-            messagebox.showerror("Error", "parselmouth not installed.\nRun: pip install praat-parselmouth")
+                messagebox.showinfo("Result", "Healthy — No Parkinson's Detected\n\n" + DISCLAIMER)
+        except ImportError as e:
+            messagebox.showerror("Missing Dependency", str(e))
+        except (FileNotFoundError, ValueError) as e:
+            messagebox.showerror("Error", str(e))
         except Exception as e:
             messagebox.showerror("Error", f"Analysis failed:\n{e}")
 

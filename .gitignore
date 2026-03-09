@@ -1,5 +1,10 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pkl
+*.wav
 .DS_Store
+.env
+venv/
+*.egg-info/
 file_path.csv
